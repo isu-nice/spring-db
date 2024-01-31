@@ -11,8 +11,10 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
@@ -29,8 +31,8 @@ import java.util.Optional;
  * BeanPropertyRowMapper
  */
 @Slf4j
+@Repository
 public class JdbcTemplateItemRepositoryV2 implements ItemRepository {
-
     private final NamedParameterJdbcTemplate template;
 
     public JdbcTemplateItemRepositoryV2(DataSource dataSource) {
@@ -39,14 +41,12 @@ public class JdbcTemplateItemRepositoryV2 implements ItemRepository {
 
     @Override
     public Item save(Item item) {
-        String sql = "insert into item(item_name, price, quantity) " +
+        String sql = "insert into item (item_name, price, quantity) " +
                 "values (:itemName, :price, :quantity)";
-
-        BeanPropertySqlParameterSource param = new BeanPropertySqlParameterSource(item);
+        SqlParameterSource param = new BeanPropertySqlParameterSource(item);
         KeyHolder keyHolder = new GeneratedKeyHolder();
         template.update(sql, param, keyHolder);
-
-        long key = keyHolder.getKey().longValue();
+        Long key = keyHolder.getKey().longValue();
         item.setId(key);
         return item;
     }
@@ -57,18 +57,18 @@ public class JdbcTemplateItemRepositoryV2 implements ItemRepository {
                 "item_name=:itemName, price=:price, quantity=:quantity " +
                 "where id=:id";
 
-        MapSqlParameterSource param = new MapSqlParameterSource()
+        SqlParameterSource param = new MapSqlParameterSource()
                 .addValue("itemName", updateParam.getItemName())
                 .addValue("price", updateParam.getPrice())
                 .addValue("quantity", updateParam.getQuantity())
-                .addValue("id", itemId);
+                .addValue("id", itemId); //이 부분이 별도로 필요하다. template.update(sql, param);
 
         template.update(sql, param);
     }
 
     @Override
     public Optional<Item> findById(Long id) {
-        String sql = "select id, item_name, price, quantity from item where id=:id";
+        String sql = "select id, item_name, price, quantity from item where id = :id ";
         try {
             Map<String, Object> param = Map.of("id", id);
             Item item = template.queryForObject(sql, param, itemRowMapper());
@@ -80,23 +80,21 @@ public class JdbcTemplateItemRepositoryV2 implements ItemRepository {
 
     @Override
     public List<Item> findAll(ItemSearchCond cond) {
-        String itemName = cond.getItemName();
         Integer maxPrice = cond.getMaxPrice();
+        String itemName = cond.getItemName();
 
-        BeanPropertySqlParameterSource param = new BeanPropertySqlParameterSource(cond);
+        SqlParameterSource param = new BeanPropertySqlParameterSource(cond);
 
         String sql = "select id, item_name, price, quantity from item";
         // 동적 쿼리
         if (StringUtils.hasText(itemName) || maxPrice != null) {
             sql += " where";
         }
-
         boolean andFlag = false;
         if (StringUtils.hasText(itemName)) {
             sql += " item_name like concat('%',:itemName,'%')";
             andFlag = true;
         }
-
         if (maxPrice != null) {
             if (andFlag) {
                 sql += " and";
