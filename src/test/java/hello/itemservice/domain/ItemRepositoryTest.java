@@ -9,21 +9,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Transactional
 @SpringBootTest // @SpringBootApplication 찾아서 설정으로 사용함
 class ItemRepositoryTest {
 
     @Autowired
     ItemRepository itemRepository;
 
-    @Autowired
+/*    @Autowired
     PlatformTransactionManager transactionManager;
     TransactionStatus status;
 
@@ -31,7 +34,7 @@ class ItemRepositoryTest {
     void beforeEach() {
         // 트랜잭션 시작
         status = transactionManager.getTransaction(new DefaultTransactionDefinition());
-    }
+    }*/
 
     @AfterEach
     void afterEach() {
@@ -40,10 +43,12 @@ class ItemRepositoryTest {
             ((MemoryItemRepository) itemRepository).clearStore();
         }
 
-        // 트랜잭션 롤백
-        transactionManager.rollback(status);
+  /*      // 트랜잭션 롤백
+        transactionManager.rollback(status);*/
     }
 
+    //@Commit // 롤백되지 않고 DB에 저장되는 것을 보고싶은 경우
+    @Transactional
     @Test
     void save() {
         //given
