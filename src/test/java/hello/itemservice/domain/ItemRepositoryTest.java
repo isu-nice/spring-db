@@ -13,7 +13,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest // @SpringBootApplication 찾아서 설정으로 사용함
 class ItemRepositoryTest {
 
     @Autowired
